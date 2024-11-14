@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace Bga\Games\DeadMenPax;
 
+use Deck;
+
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class Game extends \Table
@@ -35,6 +37,11 @@ class Game extends \Table
      * NOTE: afterward, you can get/set the global variables with `getGameStateValue`, `setGameStateInitialValue` or
      * `setGameStateValue` functions.
      */
+    private Deck $charactersDeck;
+    private Deck $itemsDeck;
+    private Deck $revengeDeck;
+    private Deck $tokensBag;
+    
     public function __construct()
     {
         parent::__construct();
@@ -45,6 +52,14 @@ class Game extends \Table
             "my_first_game_variant" => 100,
             "my_second_game_variant" => 101,
         ]);
+
+
+        // Initialize decks
+        $this->genericDeck = $this->getNew("module.common.deck");
+        $this->genericDeck->init("cards");
+        $this->itemDeck = $this->getNew("module.common.deck");
+        $this->itemDeck->init("items");
+ 
     }
 
     /**
@@ -260,7 +275,8 @@ class Game extends \Table
         // $this->initStat("table", "table_teststat1", 0);
         // $this->initStat("player", "player_teststat1", 0);
 
-        // TODO: Setup the initial game situation here.
+        // INIT GAME TABLE.
+
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
@@ -304,6 +320,6 @@ class Game extends \Table
             return;
         }
 
-        throw new feException("Zombie mode not supported at this game state: \"{$state_name}\".");
+        throw new \BgaUserException("Zombie mode not supported at this game state: \"{$state_name}\".");
     }
 }

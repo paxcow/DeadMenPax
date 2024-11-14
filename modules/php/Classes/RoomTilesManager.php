@@ -4,240 +4,319 @@ namespace BGA\Games\DeadMenPax;
 
 class RoomTilesManager
 {
-    private $board;    // Stores RoomTile objects by their positions [x][y]
-    private $room_data; // The data to initialize each tile that is placed on the table
-    private $db; //db manager
+    private static ?self $instance = null;
+    private array $roomData = []; // Static room info
+    private array $tiles = [];  // RoomTile instances by roomId
+    private array $board = [];  // Two-dimensional array storing RoomTile by [posX][posY]
+    private DBManager $db; // DB manager
 
-    // Constructor
-    public function __construct($room_data)
+    /**
+     * Private constructor to initialize the RoomTilesManager with static room data.
+     *
+     * @param array $roomData Static information about room tiles.
+     */
+    private function __construct(array $roomData)
     {
-        $this->board = [];
-        $this->room_data = $room_data; // room_data will be an array of tile configurations
+        $this->db = DBManagerRegister::addManager("rooms", RoomTile::class);
+        $this->roomData = $roomData;
     }
 
-    public static function init()
+    /**
+     * Initializes the singleton instance with room data if not already initialized.
+     *
+     * @param array $roomData Static information about room tiles.
+     * @return self The initialized RoomTilesManager instance.
+     */
+    public static function init(array $roomData): self
     {
-        self::$db = DBManagerRegister::addManger("rooms", RoomTileRow::class);
+        return self::$instance ??= new self($roomData);
     }
 
-    //
-
-
-    // Place a room on the board.  roomCard comes from a Deck and it's used to create a RoomTile object populating extra features.
-    public function placeRoom($roomCard, $xPos, $yPos, $orientation = 0)
+    /**
+     * Retrieves the singleton instance of RoomTilesManager.
+     *
+     * @return self The RoomTilesManager instance.
+     * @throws \BgaUserException If the RoomTilesManager is not initialized.
+     */
+    public static function getInstance(): self
     {
-        // Validate room type
-        if ($roomCard['type_id'] !== 'room') {
-            throw new \BgaUserException("Invalid card type: expected 'room'.");
+        return self::$instance ?? throw new \BgaUserException("RoomTilesManager not initialized. Call init() first.");
+    }
+
+    /**
+     * Loads all room tiles from the database and populates the board and tiles arrays.
+     */
+    public function loadAllRooms(): void
+    {
+        foreach ($this->db->getAllObjects() as $roomId => $roomRow) {
+            $tile = new RoomTile($roomRow, $this->roomData);
+            $this->tiles[$roomId] = $tile;
+            $pos = $tile->getPosition();
+            $this->board[$pos['posX']][$pos['posY']] = $tile;
         }
-
-        // Get the room configuration from room_data using type_arg as the index
-        $roomTypeId = $roomCard['type_arg'];
-        if (!isset($this->room_data[$roomTypeId])) {
-            throw new \BgaUserException("Invalid room type ID in room_data.");
-        }
-
-        $roomInfo = $this->room_data[$roomTypeId];
-
-        // Extract properties from room_data
-        $northDoor = $roomInfo['northDoor'];
-        $southDoor = $roomInfo['southDoor'];
-        $eastDoor = $roomInfo['eastDoor'];
-        $westDoor = $roomInfo['westDoor'];
-        $fireLevel = $roomInfo['fireLevel'];
-        $fireColor = $roomInfo['fireColor'];
-
-        // Create a new RoomTile object, using the orientation parameter
-        $tile = new RoomTile(
-            $roomCard['card_id'],   // Unique card ID from Deck
-            "Room #" . ($roomTypeId + 1), // Tile type or name
-            $fireLevel,              // Starting fire level from room_data
-            $fireColor,              // Fire color (yellow or red) from room_data
-            $northDoor,              // North door configuration
-            $southDoor,              // South door configuration
-            $eastDoor,               // East door configuration
-            $westDoor,               // West door configuration
-            $orientation             // Orientation parameter for the tile
-        );
-
-        // Validate tile placement
-        $this->validateTilePlacement($tile, $xPos, $yPos);
-
-        // Place the tile on the board
-        $this->board[$xPos][$yPos] = $tile;
     }
 
-    // Validate that the tile's doors align and connect with at least one unexploded adjacent tile
-    private function validateTilePlacement(RoomTile $tile, $xPos, $yPos)
+    /**
+     * Saves all room tiles to the database.
+     */
+    public function saveAllRooms(): void
     {
-        $connected = false;
+        foreach ($this->tiles as $tile) {
+            $this->db->saveObjectToDB($tile);
+        }
+    }
 
-        // Define the array of directions in clockwise order
-        $directions = ["north", "east", "south", "west"];
+    /**
+     * Places a room tile on the board if the position is valid.
+     *
+     * @param array $roomCard Information about the room card being placed.
+     * @param int $posX X-coordinate of the tile on the board.
+     * @param int $posY Y-coordinate of the tile on the board.
+     * @param int $orientation Orientation of the tile.
+     * @return bool True if the room was placed successfully; otherwise, false.
+     */
+    public function placeRoom(array $roomCard, int $posX, int $posY, int $orientation = 0): bool
+    {
+        if ($roomCard['card_type'] !== 'room') return false;
 
-        // Get all adjacent tiles
-        $adjacentTiles = $this->getAdjacentTiles($xPos, $yPos);
+        $roomId = $roomCard['card_type_arg'];
+        $roomRow = ['roomId' => $roomId, 'posX' => $posX, 'posY' => $posY, 'orientation' => $orientation];
+        $roomTile = new RoomTile($roomRow, $this->roomData);
 
-        // Check for door alignment and connection based on the tile's orientation
-        foreach ($adjacentTiles as $direction => $adjacentTile) {
-            if ($adjacentTile->isExploded()) {
-                continue; // Skip exploded rooms in validation
+        if (!$this->validatePositioning($roomTile)) return false;
+
+        $this->tiles[$roomId] = $roomTile;
+        $this->board[$posX][$posY] = $roomTile;
+        $this->updateReachability();
+        return true;
+    }
+
+    /**
+     * Validates if the positioning of a tile is correct by checking for adjacent tiles with matching doors.
+     *
+     * @param RoomTile $tile The room tile to validate.
+     * @return bool True if positioning is valid; otherwise, false.
+     */
+    private function validatePositioning(RoomTile $tile): bool
+    {
+        $pos = $tile->getPosition();
+        $directions = [
+            'north' => [$pos['posX'], $pos['posY'] - 1],
+            'east' => [$pos['posX'] + 1, $pos['posY']],
+            'south' => [$pos['posX'], $pos['posY'] + 1],
+            'west' => [$pos['posX'] - 1, $pos['posY']]
+        ];
+
+        $hasConnectedDoor = $adjacentExists = false;
+
+        foreach ($directions as $direction => [$adjX, $adjY]) {
+            if (!isset($this->board[$adjX][$adjY])) continue;
+
+            $adjacentTile = $this->board[$adjX][$adjY];
+            $adjacentExists = true;
+
+            $oppositeDirection = $this->getOppositeDirection($direction);
+
+            if (
+                !$adjacentTile->isExploded() &&
+                $tile->hasDoor($direction) === $adjacentTile->hasDoor($oppositeDirection)
+            ) {
+                $hasConnectedDoor = true;
+            } else {
+                return false;
             }
-            // Find the index of the current direction in the array
-            $currentIndex = array_search($direction, $directions);
-
-            // Calculate the opposite direction index using modular arithmetic
-            $oppositeDirection = $directions[($currentIndex + 2) % 4];
-
-            // Mark as connected if both doors are present in the respective directions
-            if ($tile->hasDoor($direction) && $adjacentTile->hasDoor($oppositeDirection)) {
-                $connected = true;
-            }
         }
-
-        // Allow doors pointing to exploded rooms, but ensure at least one valid connection to an unexploded room
-        return $connected;
+        return $adjacentExists && $hasConnectedDoor;
     }
 
-    // Check for explosions and propagate fire to adjacent rooms
-    private function checkForExplosionsAndPropagation()
+    /**
+     * Applies a fire effect on tiles based on the specified fire color, triggering explosions as needed.
+     *
+     * @param string $fireColor The fire color to apply ("yellow", "red", or "both").
+     */
+    public function fireEffect(string $fireColor): void
     {
-        $tilesToExplode = [];
+        ksort($this->board);
+        foreach ($this->board as $y => $row) {
+            ksort($row);
+            foreach ($row as $x => $tile) {
+                if (!$tile || ($tile->getFireColor() !== $fireColor && $fireColor !== 'both')) continue;
 
-        foreach ($this->board as $xPos => $row) {
-            foreach ($row as $yPos => $tile) {
-                if ($tile !== null && !$tile->isExploded() && $tile->getFireLevel() >= 6) {
-                    // Skip tile (0,0) as it cannot explode
-                    if ($xPos === 0 && $yPos === 0) {
-                        $tile->setFireLevel(5); // Reset fire level to prevent explosion
-                        continue;
-                    }
-                    $tilesToExplode[] = ['tile' => $tile, 'x' => $xPos, 'y' => $yPos];
+                $tile->incrementFireLevel();
+                if ($tile->getFireLevel() >= $tile->getKegThreshold() && !$tile->isKegExploded()) {
+                    $tile->setKegExploded(true);
+                    $this->propagateKegExplosion($tile);
+                }
+                if ($tile->getFireLevel() >= 6 && !$tile->isExploded()) {
+                    $tile->setExploded(true);
+                    $this->propagateRoomExplosion($tile);
                 }
             }
         }
-
-        // Process the explosions
-        foreach ($tilesToExplode as $data) {
-            $this->triggerExplosion($data['tile'], $data['x'], $data['y']);
-        }
-
-        // After handling explosions, check for unreachable tiles
-        $this->updateUnreachableTiles();
+        $this->updateReachability();
     }
 
-    // Trigger an explosion and propagate fire to connected tiles
-    private function triggerExplosion(RoomTile $tile, $xPos, $yPos)
+    /**
+     * Propagates fire to adjacent tiles if a keg explosion occurs.
+     *
+     * @param RoomTile $tile The tile where the keg explosion originated.
+     */
+    private function propagateKegExplosion(RoomTile $tile): void
     {
-        // Flag tile as exploded
-        $tile->setExploded(true);
-        $tile->unsetDoors(); // Unset all doors (room becomes inaccessible)
-        $tile->setFireLevel(); // Reset fire level after explosion
+        $directions = ['north', 'east', 'south', 'west'];
+        $kegDoor = $tile->getKegDoor();
+        $startIdx = array_search($kegDoor, $directions);
 
-        // Propagate fire to connected tiles
-        $connectedTiles = $this->getConnectedTiles($tile, $xPos, $yPos);
+        for ($i = 0; $i < 4; $i++) {
+            $currentDirection = $directions[($startIdx + $i) % 4];
+            $adjPos = $this->getAdjacentPosition($tile->getPosition(), $currentDirection);
+            $adjTile = $this->getTileAtPosition($adjPos);
 
-        foreach ($connectedTiles as $connectedTile) {
-            $connectedTile->setFireLevel($connectedTile->getFireLevel() + 1);
-        }
-    }
-
-    // Check for unreachable tiles after explosions
-    private function updateUnreachableTiles()
-    {
-        // Reset isUnreachable for all tiles
-        foreach ($this->board as $row) {
-            foreach ($row as $tile) {
-                $tile->setUnreachable(true); // Assume initially unreachable
-            }
-        }
-
-        // Start BFS from (0,0)
-        $queue = [];
-        $visited = [];
-
-        $startingTile = $this->getRoomTile(0, 0);
-        if ($startingTile === null) {
-            throw new \BgaUserException("Starting tile at (0,0) is missing.");
-        }
-
-        $queue[] = ['tile' => $startingTile, 'x' => 0, 'y' => 0];
-        $startingTile->setUnreachable(false);
-
-        while (!empty($queue)) {
-            $current = array_shift($queue);
-            $currentTile = $current['tile'];
-            $xPos = $current['x'];
-            $yPos = $current['y'];
-
-            $key = "$xPos,$yPos";
-            if (isset($visited[$key])) {
-                continue;
-            }
-            $visited[$key] = true;
-
-            $connectedTiles = $this->getConnectedTiles($currentTile, $xPos, $yPos);
-            foreach ($connectedTiles as $connectedTile) {
-                $connectedTile->setUnreachable(false);
-                $queue[] = ['tile' => $connectedTile];
+            if (
+                $adjTile && !$adjTile->isExploded() &&
+                $tile->hasDoor($currentDirection) && $adjTile->hasDoor($this->getOppositeDirection($currentDirection))
+            ) {
+                $adjTile->incrementFireLevel();
+                $this->chainExplosion($adjTile);
+                break;
             }
         }
     }
 
-    // Get adjacent tiles with positions for validation and propagation
-    private function getAdjacentTiles($xPos, $yPos)
+    /**
+     * Propagates fire to all connected adjacent tiles if a room explosion occurs.
+     *
+     * @param RoomTile $tile The tile where the room explosion originated.
+     */
+    private function propagateRoomExplosion(RoomTile $tile): void
     {
-        $adjacentTiles = [];
+        $directions = ['north', 'east', 'south', 'west'];
+        foreach ($directions as $direction) {
+            $adjPos = $this->getAdjacentPosition($tile->getPosition(), $direction);
+            $adjTile = $this->getTileAtPosition($adjPos);
 
-        if (isset($this->board[$xPos][$yPos + 1])) {
-            $adjacentTiles['north'] = $this->board[$xPos][$yPos + 1];
-        }
-        if (isset($this->board[$xPos][$yPos - 1])) {
-            $adjacentTiles['south'] = $this->board[$xPos][$yPos - 1];
-        }
-        if (isset($this->board[$xPos + 1][$yPos])) {
-            $adjacentTiles['east'] = $this->board[$xPos + 1][$yPos];
-        }
-        if (isset($this->board[$xPos - 1][$yPos])) {
-            $adjacentTiles['west'] = $this->board[$xPos - 1][$yPos];
-        }
-
-        return $adjacentTiles;
-    }
-
-    // Get connected tiles for fire propagation
-    private function getConnectedTiles(RoomTile $tile, $xPos, $yPos)
-    {
-        $connectedTiles = [];
-        $adjacentTiles = $this->getAdjacentTiles($xPos, $yPos);
-
-        foreach ($adjacentTiles as $direction => $adjacentTile) {
-            if ($adjacentTile->isExploded()) continue;
-
-            switch ($direction) {
-                case 'north':
-                    if ($tile->hasNorthDoor() && $adjacentTile->hasSouthDoor()) {
-                        $connectedTiles[] = $adjacentTile;
-                    }
-                    break;
-                case 'south':
-                    if ($tile->hasSouthDoor() && $adjacentTile->hasNorthDoor()) {
-                        $connectedTiles[] = $adjacentTile;
-                    }
-                    break;
-                case 'east':
-                    if ($tile->hasEastDoor() && $adjacentTile->hasWestDoor()) {
-                        $connectedTiles[] = $adjacentTile;
-                    }
-                    break;
-                case 'west':
-                    if ($tile->hasWestDoor() && $adjacentTile->hasEastDoor()) {
-                        $connectedTiles[] = $adjacentTile;
-                    }
-                    break;
+            if (
+                $adjTile && !$adjTile->isExploded() &&
+                $tile->hasDoor($direction) && $adjTile->hasDoor($this->getOppositeDirection($direction))
+            ) {
+                $adjTile->incrementFireLevel();
+                $this->chainExplosion($adjTile);
             }
         }
+    }
 
-        return $connectedTiles;
+    /**
+     * Triggers a chain explosion if a tile reaches its fire threshold or explosion threshold.
+     *
+     * @param RoomTile $tile The tile to check for a chain explosion.
+     */
+    private function chainExplosion(RoomTile $tile): void
+    {
+        if ($tile->getFireLevel() >= $tile->getKegThreshold() && !$tile->isKegExploded()) {
+            $tile->setKegExploded(true);
+            $this->propagateKegExplosion($tile);
+        }
+        if ($tile->getFireLevel() >= 6 && !$tile->isExploded()) {
+            $tile->setExploded(true);
+            $this->propagateRoomExplosion($tile);
+        }
+    }
+
+    /**
+     * Updates the reachability status of all tiles on the board.
+     */
+    private function updateReachability(): void
+    {
+        if (!isset($this->board[0][0])) return;
+
+        $reachable = [];
+        $this->dfsMarkReachable(0, 0, $reachable);
+
+        foreach ($this->tiles as $tile) {
+            $pos = $tile->getPosition();
+            $tile->setUnreachable(!isset($reachable["{$pos['posX']},{$pos['posY']}"]));
+        }
+    }
+
+    /**
+     * Marks reachable tiles starting from the given coordinates using Depth-First Search (DFS).
+     *
+     * @param int $startX Starting X-coordinate.
+     * @param int $startY Starting Y-coordinate.
+     * @param array $reachable Reference array to track reachable tiles.
+     */
+    private function dfsMarkReachable(int $startX, int $startY, array &$reachable): void
+    {
+        $stack = [[$startX, $startY]];
+
+        while ($stack) {
+            [$x, $y] = array_pop($stack);
+            if (isset($reachable["$x,$y"])) continue;
+
+            $reachable["$x,$y"] = true;
+            $currentTile = $this->board[$x][$y];
+
+            $directions = [
+                'north' => [$x, $y - 1],
+                'east' => [$x + 1, $y],
+                'south' => [$x, $y + 1],
+                'west' => [$x - 1, $y]
+            ];
+
+            foreach ($directions as $direction => [$adjX, $adjY]) {
+                if (
+                    isset($this->board[$adjX][$adjY]) && !$this->board[$adjX][$adjY]->isUnreachable() &&
+                    $currentTile->hasDoor($direction) === $this->board[$adjX][$adjY]->hasDoor($this->getOppositeDirection($direction))
+                ) {
+                    $stack[] = [$adjX, $adjY];
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the position of an adjacent tile based on the specified direction.
+     *
+     * @param array $pos The current position as ['posX' => x, 'posY' => y].
+     * @param string $direction The direction to move towards.
+     * @return array The position of the adjacent tile.
+     */
+    private function getAdjacentPosition(array $pos, string $direction): array
+    {
+        $x = $pos['posX'];
+        $y = $pos['posY'];
+        return match ($direction) {
+            'north' => ['posX' => $x, 'posY' => $y - 1],
+            'east'  => ['posX' => $x + 1, 'posY' => $y],
+            'south' => ['posX' => $x, 'posY' => $y + 1],
+            'west'  => ['posX' => $x - 1, 'posY' => $y],
+        };
+    }
+
+    /**
+     * Retrieves a tile at the specified position on the board.
+     *
+     * @param array $pos The position to retrieve as ['posX' => x, 'posY' => y].
+     * @return RoomTile|null The tile at the specified position or null if none exists.
+     */
+    private function getTileAtPosition(array $pos): ?RoomTile
+    {
+        return $this->board[$pos['posX']][$pos['posY']] ?? null;
+    }
+
+    /**
+     * Returns the opposite direction for a given direction.
+     *
+     * @param string $direction The direction ("north", "south", "east", or "west").
+     * @return string The opposite direction.
+     */
+    private function getOppositeDirection(string $direction): string
+    {
+        return match ($direction) {
+            'north' => 'south',
+            'east'  => 'west',
+            'south' => 'north',
+            'west'  => 'east',
+        };
     }
 }
