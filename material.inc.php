@@ -394,3 +394,141 @@ $revengeData = [
         "effect" => null
     ],
 ];
+
+$tokenData = [
+    [
+        "front" => [
+            "type" => "crew",
+            "value" => 3
+        ],
+        "back" => [
+            "type" => "grog",
+            "value" => 4
+        ],
+        "nbr" => 2
+    ],
+    [
+        "front" => [
+            "face" => "crew",
+            "value" => 3,
+        ],
+        "back" => [
+            "face" => "cutlass",
+            "value" => null,
+        ],
+        "nbr" => 1,
+    ],
+    [
+        "front" => [
+            "face" => "crew",
+            "value" => 4,
+        ],
+        "back" => [
+            "face" => "cutlass",
+            "value" => null,
+        ],
+        "nbr" => 2,
+    ],
+    [
+        "front" => [
+            "face" => "crew",
+            "value" => 4,
+        ],
+        "back" => [
+            "face" => "grog",
+            "value" => 5,
+        ],
+        "nbr" => 1,
+    ],
+    [
+        "front" => [
+            "face" => "crew",
+            "value" => 5,
+        ],
+        "back" => [
+            "face" => "cutlass",
+            "value" => null,
+        ],
+        "nbr" => 2,
+    ],
+    [
+        "front" => [
+            "face" => "guardian",
+            "value" => 6,
+        ],
+        "back" => [
+            "face" => "treasure",
+            "value" => null,
+        ],
+        "nbr" => 2,
+    ],
+    [
+        "front" => [
+            "face" => "guardian",
+            "value" => 7,
+        ],
+        "back" => [
+            "face" => "treasure",
+            "value" => null,
+        ],
+        "nbr" => 2,
+    ],
+    [
+        "front" => [
+            "face" => "guardian",
+            "value" => 8,
+        ],
+        "back" => [
+            "face" => "treasure",
+            "value" => null,
+        ],
+        "nbr" => 2,
+    ],
+    [
+        "front" => [
+            "face" => "trap",
+            "value" => "null",
+        ],
+        "nbr" =>  6,
+    ],
+
+];
+
+$itemData = [
+    [
+        "name" => clienttranslate("Blanket"),
+        "text" => clienttranslate("May lower a Fire Die by 2 once per turn."),
+        "cost" => 1
+    ],
+    [
+        "name" => clienttranslate("Bucket"),
+        "text" => clienttranslate("May lower a Fire Die in an adjacent room once per turn."),
+        "cost" => 1
+    ],
+    [
+        "name" => clienttranslate("Compass"),
+        "text" => clienttranslate("One free Walk or Run Action per turn."),
+        "cost" => 0
+    ],
+    [
+        "name" => clienttranslate("Dagger"),
+        "text" => clienttranslate("One free Eliminate Deckhand Action per turn."),
+        "cost" => 0
+    ],
+    [
+        "name" => clienttranslate("Pistol"),
+        "text" => clienttranslate("Nay attack from an adjacent room for on Action once per turn. No fatigue is lost for a failed attack."),
+        "cost" => 1
+    ],
+    [
+        "name" => clienttranslate("Rum"),
+        "text" => clienttranslate("One free Rest Action per turn."),
+        "cost" => 0
+    ],
+    [
+        "name" => clienttranslate("Sword"),
+        "text" => clienttranslate("Add 1 to Strength in Battle."),
+        "cost" => 0
+    ],
+
+];
