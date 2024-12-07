@@ -101,7 +101,13 @@ $machinestates = [
 
     // Note: ID=2 => your first state
 
-
+2 => array(
+    "name" => "temp",
+    "description" => "temp",
+    "descriptionmyturn" => "temp",
+    "type" => "activeplayer",
+    "transition" => [""=> 99]
+),
 
 
     // Final state.

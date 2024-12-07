@@ -37,103 +37,31 @@ class Game extends \Table
      * NOTE: afterward, you can get/set the global variables with `getGameStateValue`, `setGameStateInitialValue` or
      * `setGameStateValue` functions.
      */
-    private Deck $charactersDeck;
     private Deck $itemsDeck;
     private Deck $revengeDeck;
     private Deck $tokensBag;
-    
+    private Deck $tilePile;
+
     public function __construct()
     {
+        $this->trace("########## Starting constructor");
+        require_once("material.inc.php");
         parent::__construct();
-
-        $this->initGameStateLabels([
-            "my_first_global_variable" => 10,
-            "my_second_global_variable" => 11,
-            "my_first_game_variant" => 100,
-            "my_second_game_variant" => 101,
-        ]);
 
 
         // Initialize decks
-        $this->genericDeck = $this->getNew("module.common.deck");
-        $this->genericDeck->init("cards");
-        $this->itemDeck = $this->getNew("module.common.deck");
-        $this->itemDeck->init("items");
+        $this->itemsDeck = $this->getNew("module.common.deck");
+        $this->itemsDeck->init("items");
+        $this->revengeDeck = $this->getNew("module.common.deck");
+        $this->revengeDeck->init("revenge");
+        $this->tokensBag = $this->getNew("module.common.deck");
+        $this->tokensBag->init("tokens");
+        $this->tilePile = $this->getNew("module.common.deck");
+        $this->tilePile->init("tiles");
  
     }
 
-    /**
-     * Player action, example content.
-     *
-     * In this scenario, each time a player plays a card, this method will be called. This method is called directly
-     * by the action trigger on the front side with `bgaPerformAction`.
-     *
-     * @throws BgaSystemException
-     * @see action_deadmenpax::actMyAction
-     */
-    public function actPlayCard(int $card_id): void
-    {
-        // Retrieve the active player ID.
-        $player_id = (int)$this->getActivePlayerId();
-
-        // Add your game logic to play a card here.
-        $card_name = $this->card_types[$card_id]['card_name'];
-
-        // Notify all players about the card played.
-        $this->notifyAllPlayers("cardPlayed", clienttranslate('${player_name} plays ${card_name}'), [
-            "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(),
-            "card_name" => $card_name,
-            "card_id" => $card_id,
-            "i18n" => ['card_name'],
-        ]);
-
-        // at the end of the action, move to the next state
-        $this->gamestate->nextState("playCard");
-    }
-
-    public function actPass(): void
-    {
-        // Retrieve the active player ID.
-        $player_id = (int)$this->getActivePlayerId();
-
-        // Notify all players about the choice to pass.
-        $this->notifyAllPlayers("cardPlayed", clienttranslate('${player_name} passes'), [
-            "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(),
-        ]);
-
-        // at the end of the action, move to the next state
-        $this->gamestate->nextState("pass");
-    }
-
-    /**
-     * Game state arguments, example content.
-     *
-     * This method returns some additional information that is very specific to the `playerTurn` game state.
-     *
-     * @return string[]
-     * @see ./states.inc.php
-     */
-    public function argPlayerTurn(): array
-    {
-        // Get some values from the current game situation from the database.
-
-        return [
-            "playableCardsIds" => [1, 2],
-        ];
-    }
-
-    /**
-     * Compute and return the current game progression.
-     *
-     * The number returned must be an integer between 0 and 100.
-     *
-     * This method is called each time we are in a game state with the "updateGameProgression" property set to true.
-     *
-     * @return int
-     * @see ./states.inc.php
-     */
+ 
     public function getGameProgression()
     {
         // TODO: compute and return the game progression
@@ -141,24 +69,7 @@ class Game extends \Table
         return 0;
     }
 
-    /**
-     * Game state action, example content.
-     *
-     * The action method of state `nextPlayer` is called everytime the current game state is set to `nextPlayer`.
-     */
-    public function stNextPlayer(): void {
-        // Retrieve the active player ID.
-        $player_id = (int)$this->getActivePlayerId();
 
-        // Give some extra time to the active player when he completed an action
-        $this->giveExtraTime($player_id);
-        
-        $this->activeNextPlayer();
-
-        // Go to another gamestate
-        // Here, we would detect if the game is over, and in this case use "endGame" transition instead 
-        $this->gamestate->nextState("nextPlayer");
-    }
 
     /**
      * Migrate database.
@@ -232,6 +143,7 @@ class Game extends \Table
      */
     protected function setupNewGame($players, $options = [])
     {
+        $this->trace("########## initiating game setup");
         // Set the colors of the players with HTML color code. The default below is red/green/blue/orange/brown. The
         // number of colors defined here must correspond to the maximum number of players allowed for the gams.
         $gameinfos = $this->getGameinfos();
@@ -249,9 +161,7 @@ class Game extends \Table
         }
 
         // Create players based on generic information.
-        //
-        // NOTE: You can add extra field on player table in the database (see dbmodel.sql) and initialize
-        // additional fields directly here.
+
         static::DbQuery(
             sprintf(
                 "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES %s",
@@ -268,14 +178,42 @@ class Game extends \Table
         $this->setGameStateInitialValue("my_first_global_variable", 0);
 
         // Init game statistics.
-        //
-        // NOTE: statistics used in this file must be defined in your `stats.inc.php` file.
+ 
 
-        // Dummy content.
-        // $this->initStat("table", "table_teststat1", 0);
-        // $this->initStat("player", "player_teststat1", 0);
+
+        // POPULATE DECKS
+        $itemCards = [];
+        foreach ($this->itemData as $type_item => $itemCard) {
+            $itemCards[] = array("type" => "item", "type_arg" => $type_item, "nbr" =>1);
+        }
+        $this->itemsDeck->createCards($itemCards);
+        $this->itemsDeck->shuffle("deck");
+
+        $revengeCards = [];
+        foreach ($this->revengeData as $type_revenge => $revengeCard) {
+            $revengeCards[] = array("type" => "revenge", "type_arg" => $type_revenge, "nbr" =>1);
+        }
+        $this->revengeDeck->createCards($revengeCards);
+        $this->revengeDeck->shuffle("deck");
+
+        $tokens = [];
+        foreach ($this->tokenData as $type_token => $token) {
+            $tokens[] = array("type" => "token", "type_arg" => $type_token, "nbr" => $token["nbr"]);
+        }
+        $this->tokensBag->createCards($tokens, "bag");
+        $this->tokensBag->shuffle("bag");
+
+        $tiles = [];
+        foreach ($this->roomsData as $tile_type => $tile) {
+            $tiles[] = array("type" => "tile", "type_arg" => $tile_type, "nbr" => 1);
+        }
+        $this->tilePile->createCards($tiles, "pile");
+        $this->tilePile->shuffle("pile");
+
 
         // INIT GAME TABLE.
+
+
 
 
         // Activate first player once everything has been initialized and ready.

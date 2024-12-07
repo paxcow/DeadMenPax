@@ -1,6 +1,8 @@
 <?php
 
-$starting_rooms = [
+namespace Bga\Games\DeadMenPax;
+
+$this->startingRoomsData = [
     [
         "fireColor" => "yellow",
         "startFireValue" => -1,
@@ -51,7 +53,7 @@ $starting_rooms = [
     ]
 ];
 
-$rooms = [
+$this->roomsData = [
     [
         "fireColor" => "red",
         "startFireValue" => 3,
@@ -296,7 +298,7 @@ $rooms = [
 
 ];
 
-$revengeData = [
+$this->revengeData = [
     [
         "color" => "both",
         "threshold" => 0,
@@ -395,7 +397,7 @@ $revengeData = [
     ],
 ];
 
-$tokenData = [
+$this->tokenData = [
     [
         "front" => [
             "type" => "crew",
@@ -494,7 +496,7 @@ $tokenData = [
 
 ];
 
-$itemData = [
+$this->itemData = [
     [
         "name" => clienttranslate("Blanket"),
         "text" => clienttranslate("May lower a Fire Die by 2 once per turn."),

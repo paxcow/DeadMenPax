@@ -48,7 +48,7 @@ class RoomTilesManager
      */
     public function loadAllRooms(): void
     {
-        foreach ($this->db->getAllObjects() as $roomId => $roomRow) {
+        foreach ($this->db->getAllRowsByKeys() as $roomId => $roomRow) {
             $tile = new RoomTile($roomRow, $this->roomData);
             $this->tiles[$roomId] = $tile;
             $pos = $tile->getPosition();
@@ -247,30 +247,10 @@ class RoomTilesManager
      */
     private function dfsMarkReachable(int $startX, int $startY, array &$reachable): void
     {
-        $stack = [[$startX, $startY]];
-
-        while ($stack) {
-            [$x, $y] = array_pop($stack);
-            if (isset($reachable["$x,$y"])) continue;
-
-            $reachable["$x,$y"] = true;
-            $currentTile = $this->board[$x][$y];
-
-            $directions = [
-                'north' => [$x, $y - 1],
-                'east' => [$x + 1, $y],
-                'south' => [$x, $y + 1],
-                'west' => [$x - 1, $y]
-            ];
-
-            foreach ($directions as $direction => [$adjX, $adjY]) {
-                if (
-                    isset($this->board[$adjX][$adjY]) && !$this->board[$adjX][$adjY]->isUnreachable() &&
-                    $currentTile->hasDoor($direction) === $this->board[$adjX][$adjY]->hasDoor($this->getOppositeDirection($direction))
-                ) {
-                    $stack[] = [$adjX, $adjY];
-                }
-            }
+        $reachableTiles = $this->performDFS($startX, $startY);
+        foreach ($reachableTiles as $key => $value) {
+            [$x, $y] = explode(',', $key);
+            $reachable["$x,$y"] = $value;
         }
     }
 
@@ -319,4 +299,107 @@ class RoomTilesManager
             'west'  => 'east',
         };
     }
+
+        /**
+     * Performs a DFS traversal starting from a given position to explore reachable tiles.
+     *
+     * @param int $startX X-coordinate of the starting tile.
+     * @param int $startY Y-coordinate of the starting tile.
+     * @param array|null $targetPos Optional destination position ['posX' => x, 'posY' => y].
+     * @return array|bool Returns an array of reachable tiles if $targetPos is null,
+     *                    or true if the target tile is reachable, false otherwise.
+     */
+    private function performDFS(int $startX, int $startY, ?array $targetPos = null): array|bool
+    {
+        $reachable = [];
+        $stack = [[$startX, $startY]];
+
+        while ($stack) {
+            [$x, $y] = array_pop($stack);
+            if (isset($reachable["$x,$y"])) continue;
+
+            $reachable["$x,$y"] = true;
+
+            // If a target position is provided and matched, return true
+            if ($targetPos && $x === $targetPos['posX'] && $y === $targetPos['posY']) {
+                return true;
+            }
+
+            $currentTile = $this->board[$x][$y] ?? null;
+
+            if (!$currentTile) continue;
+
+            $directions = [
+                'north' => [$x, $y - 1],
+                'east' => [$x + 1, $y],
+                'south' => [$x, $y + 1],
+                'west' => [$x - 1, $y]
+            ];
+
+            foreach ($directions as $direction => [$adjX, $adjY]) {
+                $adjTile = $this->board[$adjX][$adjY] ?? null;
+
+                if (
+                    $adjTile && !$adjTile->isUnreachable() &&
+                    $currentTile->hasDoor($direction) === $adjTile->hasDoor($this->getOppositeDirection($direction))
+                ) {
+                    $stack[] = [$adjX, $adjY];
+                }
+            }
+        }
+
+        // If targetPos is provided but not found, return false
+        return $targetPos ? false : $reachable;
+    }
+
+      /**
+     * Checks if there is a walking path between two tiles.
+     *
+     * A walking path exists if there is a series of adjacent tiles with corresponding doors
+     * that connect the starting tile to the destination tile.
+     *
+     * @param RoomTile $startTile The starting tile.
+     * @param RoomTile $endTile The destination tile.
+     * @return bool True if there is a walking path between the tiles; otherwise, false.
+     */
+    public function hasWalkingPath(RoomTile $startTile, RoomTile $endTile): bool
+    {
+        $startPos = $startTile->getPosition();
+        $endPos = $endTile->getPosition();
+
+        // If the start and end positions are the same, the path exists
+        if ($startPos['posX'] === $endPos['posX'] && $startPos['posY'] === $endPos['posY']) {
+            return true;
+        }
+
+        // Use performDFS to check for connectivity to the target position
+        return $this->performDFS($startPos['posX'], $startPos['posY'], $endPos);
+    }
+        /**
+     * Checks if there is a walking path between two tiles based on their positions.
+     *
+     * A walking path exists if there is a series of adjacent tiles with corresponding doors
+     * that connect the starting tile to the destination tile.
+     *
+     * @param int $startX X-coordinate of the starting tile.
+     * @param int $startY Y-coordinate of the starting tile.
+     * @param int $endX X-coordinate of the destination tile.
+     * @param int $endY Y-coordinate of the destination tile.
+     * @return bool True if there is a walking path between the tiles; otherwise, false.
+     */
+    public function hasWalkingPathByCoordinates(int $startX, int $startY, int $endX, int $endY): bool
+    {
+        // Check if tiles exist at the given positions
+        $startTile = $this->getTileAtPosition(['posX' => $startX, 'posY' => $startY]);
+        $endTile = $this->getTileAtPosition(['posX' => $endX, 'posY' => $endY]);
+
+        if (!$startTile || !$endTile) {
+            return false; // Path cannot exist if one or both tiles are missing
+        }
+
+        // Reuse the original hasWalkingPath method
+        return $this->hasWalkingPath($startTile, $endTile);
+    }
+
+
 }
