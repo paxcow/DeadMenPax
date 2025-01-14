@@ -48,42 +48,41 @@
 */
 
 //    !! It is not a good idea to modify this file when a game is running !!
+$state_const = [
+    "ACTIVATE_NEXT_PLAYER",
+    "PLACE_ROOM",
+    "PLACE_DINGHY",
+    "SELECT_ACTION",
+    "SELECT_ROOM_TO_WALK",
+    "SELECT_ROOM_TO_RUN",
+    "FIGHT_FIRE",
+    "INCREASE_BATTLE_STRENGTH",
+    "PICKUP_TOKEN",
+    "REST",
+    "SWAP_ITEM",
+    "ACTIVATE_SECOND_PLAYER",
+    "PLAYER_CHOOSE_ITEM",
+    "ACTIVATE_PREV_PLAYER",
+    "DRINK_GROG",
+    "DROP_TOKEN",
+    "BATTLE_ROUND",
+    "BATTLE_END",
+    "PLAYER_RETREATS",
+    "PLAYER_CHOSES_OUTCOME",
+    "RESPAWN",
+    "NEXT_PLAYER_TURN",
+    "SKELIT_REVENGE",
+];
+
 if (!defined("GAME_START")) {
 
-    define("GAME_START",1);
-    
-    define("PLAYER_TURN_START",2);
-    define("PLACE_ROOM",3);
-
-    define("SELECT_ACTION",4);
-    define("SELECT_ROOM_TO_WALK",5);
-    define("SELECT_ROOM_TO_RUN",6);
-
-    define("FIGHT_FIRE",7);
-    define("ELIMINATE_DECKHAND",8);
-
-    define("PICKUP_TOKEN",9);
-    define("DISCARD_TOKEN",10);
-
-    define("PICK_CARD",11);
-    define("OTHER_PLAYER_PICKS_CARD",12);
-
-    define("BATTLE_ROUND",13);
-    define("BATTLE_END",14);
-    define("PLAYER_RETREATS",15);
-    define("PLAYER_CHOOSES_OUTCOME",16);
-
-    define("RESPAWN",17);
-
-    define("NEXT_PLAYER_TURN",18);
-
-    define("SKELIT_REVENGE",19);
-
-
+    define("GAME_START", 1);
     define("GAME_END",99);
-    
 
-
+    $startNum = 2;
+    foreach ($state_const as $index => $name ){
+        define($name, $startNum + $index);
+    }
 }    
 
 

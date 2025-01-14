@@ -42,6 +42,11 @@ class Game extends \Table
     private Deck $tokensBag;
     private Deck $tilePile;
 
+    protected $itemData;
+    protected $revengeData;
+    protected $tokenData;
+    protected $roomsData;
+
     public function __construct()
     {
         $this->trace("########## Starting constructor");
