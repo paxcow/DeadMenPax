@@ -2,22 +2,22 @@
 
 namespace BGA\Games\DeadMenPax;
 
-class RoomTilesManager
+class RoomsManager
 {
     private static ?self $instance = null;
     private array $roomData = []; // Static room info
-    private array $tiles = [];  // RoomTile instances by roomId
-    private array $board = [];  // Two-dimensional array storing RoomTile by [posX][posY]
+    private array $tiles = [];  // Room instances by roomId
+    private array $board = [];  // Two-dimensional array storing Room by [posX][posY]
     private DBManager $db; // DB manager
 
     /**
-     * Private constructor to initialize the RoomTilesManager with static room data.
+     * Private constructor to initialize the RoomsManager with static room data.
      *
      * @param array $roomData Static information about room tiles.
      */
     private function __construct(array $roomData)
     {
-        $this->db = DBManagerRegister::addManager("rooms", RoomTile::class);
+        $this->db = DBManagerRegister::addManager("rooms", Room::class);
         $this->roomData = $roomData;
     }
 
@@ -25,7 +25,7 @@ class RoomTilesManager
      * Initializes the singleton instance with room data if not already initialized.
      *
      * @param array $roomData Static information about room tiles.
-     * @return self The initialized RoomTilesManager instance.
+     * @return self The initialized RoomsManager instance.
      */
     public static function init(array $roomData): self
     {
@@ -33,14 +33,14 @@ class RoomTilesManager
     }
 
     /**
-     * Retrieves the singleton instance of RoomTilesManager.
+     * Retrieves the singleton instance of RoomsManager.
      *
-     * @return self The RoomTilesManager instance.
-     * @throws \BgaUserException If the RoomTilesManager is not initialized.
+     * @return self The RoomsManager instance.
+     * @throws \BgaUserException If the RoomsManager is not initialized.
      */
     public static function getInstance(): self
     {
-        return self::$instance ?? throw new \BgaUserException("RoomTilesManager not initialized. Call init() first.");
+        return self::$instance ?? throw new \BgaUserException("RoomsManager not initialized. Call init() first.");
     }
 
     /**
@@ -49,7 +49,7 @@ class RoomTilesManager
     public function loadAllRooms(): void
     {
         foreach ($this->db->getAllRowsByKeys() as $roomId => $roomRow) {
-            $tile = new RoomTile($roomRow, $this->roomData);
+            $tile = new Room($roomRow, $this->roomData);
             $this->tiles[$roomId] = $tile;
             $pos = $tile->getPosition();
             $this->board[$pos['posX']][$pos['posY']] = $tile;
@@ -81,12 +81,12 @@ class RoomTilesManager
 
         $roomId = $roomCard['card_type_arg'];
         $roomRow = ['roomId' => $roomId, 'posX' => $posX, 'posY' => $posY, 'orientation' => $orientation];
-        $roomTile = new RoomTile($roomRow, $this->roomData);
+        $Room = new Room($roomRow, $this->roomData);
 
-        if (!$this->validatePositioning($roomTile)) return false;
+        if (!$this->validatePositioning($Room)) return false;
 
-        $this->tiles[$roomId] = $roomTile;
-        $this->board[$posX][$posY] = $roomTile;
+        $this->tiles[$roomId] = $Room;
+        $this->board[$posX][$posY] = $Room;
         $this->updateReachability();
         return true;
     }
@@ -94,10 +94,10 @@ class RoomTilesManager
     /**
      * Validates if the positioning of a tile is correct by checking for adjacent tiles with matching doors.
      *
-     * @param RoomTile $tile The room tile to validate.
+     * @param Room $tile The room tile to validate.
      * @return bool True if positioning is valid; otherwise, false.
      */
-    private function validatePositioning(RoomTile $tile): bool
+    private function validatePositioning(Room $tile): bool
     {
         $pos = $tile->getPosition();
         $directions = [
@@ -159,9 +159,9 @@ class RoomTilesManager
     /**
      * Propagates fire to adjacent tiles if a keg explosion occurs.
      *
-     * @param RoomTile $tile The tile where the keg explosion originated.
+     * @param Room $tile The tile where the keg explosion originated.
      */
-    private function propagateKegExplosion(RoomTile $tile): void
+    private function propagateKegExplosion(Room $tile): void
     {
         $directions = ['north', 'east', 'south', 'west'];
         $kegDoor = $tile->getKegDoor();
@@ -186,9 +186,9 @@ class RoomTilesManager
     /**
      * Propagates fire to all connected adjacent tiles if a room explosion occurs.
      *
-     * @param RoomTile $tile The tile where the room explosion originated.
+     * @param Room $tile The tile where the room explosion originated.
      */
-    private function propagateRoomExplosion(RoomTile $tile): void
+    private function propagateRoomExplosion(Room $tile): void
     {
         $directions = ['north', 'east', 'south', 'west'];
         foreach ($directions as $direction) {
@@ -208,9 +208,9 @@ class RoomTilesManager
     /**
      * Triggers a chain explosion if a tile reaches its fire threshold or explosion threshold.
      *
-     * @param RoomTile $tile The tile to check for a chain explosion.
+     * @param Room $tile The tile to check for a chain explosion.
      */
-    private function chainExplosion(RoomTile $tile): void
+    private function chainExplosion(Room $tile): void
     {
         if ($tile->getFireLevel() >= $tile->getKegThreshold() && !$tile->isKegExploded()) {
             $tile->setKegExploded(true);
@@ -277,9 +277,9 @@ class RoomTilesManager
      * Retrieves a tile at the specified position on the board.
      *
      * @param array $pos The position to retrieve as ['posX' => x, 'posY' => y].
-     * @return RoomTile|null The tile at the specified position or null if none exists.
+     * @return Room|null The tile at the specified position or null if none exists.
      */
-    private function getTileAtPosition(array $pos): ?RoomTile
+    private function getTileAtPosition(array $pos): ?Room
     {
         return $this->board[$pos['posX']][$pos['posY']] ?? null;
     }
@@ -358,11 +358,11 @@ class RoomTilesManager
      * A walking path exists if there is a series of adjacent tiles with corresponding doors
      * that connect the starting tile to the destination tile.
      *
-     * @param RoomTile $startTile The starting tile.
-     * @param RoomTile $endTile The destination tile.
+     * @param Room $startTile The starting tile.
+     * @param Room $endTile The destination tile.
      * @return bool True if there is a walking path between the tiles; otherwise, false.
      */
-    public function hasWalkingPath(RoomTile $startTile, RoomTile $endTile): bool
+    public function hasWalkingPath(Room $startTile, Room $endTile): bool
     {
         $startPos = $startTile->getPosition();
         $endPos = $endTile->getPosition();

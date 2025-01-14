@@ -9,7 +9,7 @@ use BGA\Games\DeadMenPax\dbColumn;
  * Class representing a tile in the room-based game. Each tile has dynamic attributes (e.g., position, fire level) 
  * and static attributes (e.g., fire color, doors). The tile can explode under certain conditions and can have its reachability and state updated.
  */
-class RoomTile
+class Room
 {
     #[dbKey("room_id")]
     private int $roomId; // Unique ID of the tile, assigned by the deck component
