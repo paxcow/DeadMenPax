@@ -3,7 +3,7 @@
 <!-- 
 --------
 -- BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
--- DeadMenPax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
+-- deadmenpax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
 -- 
 -- This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -27,7 +27,16 @@
 
 
 This is your game interface. You can edit this HTML in your ".tpl" file.
-
+<svg width="0" height="0">
+	<filter id="filter">
+		<feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="8" seed="42" />
+		<feDisplacementMap in="SourceGraphic" scale="10" />
+	</filter>
+	<filter id="filter2">
+		<feTurbulence type="fractalNoise" baseFrequency=".01" numOctaves="10" seed="42" />
+		<feDisplacementMap in="SourceGraphic" scale="80" />
+	</filter>
+</svg>
 
 <script type="text/javascript">
 

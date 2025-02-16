@@ -1,6 +1,9 @@
 <?php
 
-namespace BGA\Games\DeadMenPax;
+namespace Bga\Games\deadmenpax\DB;
+
+use ReflectionAttribute;
+use ReflectionClass;
 
 /**
  * Class DBManager
@@ -24,6 +27,17 @@ class DBManager
         $this->baseClass = $baseClass;
         $this->db = new class extends \Table
         {
+
+            public function getAllDatas(){
+
+            } 
+            public function getGameName(){
+
+            }
+            protected function setupNewGame($players, $options = []){
+
+            }
+
             /**
              * Executes a query on the database.
              *
@@ -123,6 +137,7 @@ class DBManager
     {
         $sql = "SELECT COUNT(*) AS count FROM {$this->baseTable} WHERE $primaryKey = '{$primaryValue}'";
         $row = $this->db->doSelect($sql);
+   
         return $row[0]['count'] > 0;
     }
 
@@ -258,11 +273,12 @@ class DBManager
         $insertMode = false;
 
         foreach ($properties as $property) {
-            $column = $property->getAttributes(dbColumn::class)[0] ?? null;
+            $column = $property->getAttributes(dbColumn::class, ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
             if ($column) {
                 $columnName = $column->newInstance()->name;
                 $property->setAccessible(true);
                 $value = $property->getValue($object);
+
                 $columns[$columnName] = addslashes((string) $value);
 
                 if ($columnName === $primaryKey) {

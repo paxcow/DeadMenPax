@@ -1,5 +1,5 @@
 <?php
-namespace BGA\Games\DeadMenPax;
+namespace Bga\Games\deadmenpax;
 
 trait Undo
 {

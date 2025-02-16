@@ -1,63 +1,74 @@
 <?php
 
-namespace Bga\Games\DeadMenPax;
-
-$this->startingRoomsData = [
-    [
-        "fireColor" => "yellow",
-        "startFireValue" => -1,
-        "Doors" => [
-            "north" => false,
-            "east" => false,
-            "south" => false,
-            "west" => false
-        ],
-        "kegDoor" => null,
-        "kegThreshold" => null
-    ],
-    [
-        "fireColor" => "red",
-        "startFireValue" => -1,
-        "Doors" => [
-            "north" => true,
-            "south" => false,
-            "east" => false,
-            "west" => true
-        ],
-        "kegDoor" => null,
-        "kegThreshold" => null
-    ],
-    [
-        "fireColor" => "yellow",
-        "startFireValue" => -1,
-        "Doors" => [
-            "north" => true,
-            "south" => false,
-            "east" => true,
-            "west" => true
-        ],
-        "kegDoor" => null,
-        "kegThreshold" => null
-    ],
-    [
-        "fireColor" => "red",
-        "startFireValue" => -1,
-        "Doors" => [
-            "north" => true,
-            "east" => true,
-            "south" => false,
-            "west" => false
-        ],
-        "kegDoor" => null,
-        "kegThreshold" => null
-    ]
-];
+namespace Bga\Games\deadmenpax;
 
 $this->roomsData = [
     [
+        "type" => "starting_room",
+        "fireColor" => "yellow",
+        "startFireValue" => null,
+        "doors" => [
+            "north" => false,
+            "east" => false,
+            "south" => false,
+            "west" => false
+        ],
+        "kegDoor" => null,
+        "kegThreshold" => null,
+        "posX" => 0,
+        "posY" => 0
+
+    ],
+    [
+        "type" => "starting_room",
+        "fireColor" => "red",
+        "startFireValue" => null,
+        "doors" => [
+            "north" => true,
+            "south" => false,
+            "east" => false,
+            "west" => true
+        ],
+        "kegDoor" => null,
+        "kegThreshold" => null,
+        "posX" => -1,
+        "posY" => 0
+    ],
+    [
+        "type" => "starting_room",
+        "fireColor" => "yellow",
+        "startFireValue" => null,
+        "doors" => [
+            "north" => true,
+            "south" => false,
+            "east" => true,
+            "west" => true
+        ],
+        "kegDoor" => null,
+        "kegThreshold" => null,
+        "posX" => 0,
+        "posY" => 1
+    ],
+    [
+        "type" => "starting_room",
+        "fireColor" => "red",
+        "startFireValue" => null,
+        "doors" => [
+            "north" => true,
+            "east" => true,
+            "south" => false,
+            "west" => false
+        ],
+        "kegDoor" => null,
+        "kegThreshold" => null,
+        "posX" => 1,
+        "posY" => 0
+    ],
+    [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 3,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => true,
             "south" => true,
@@ -67,9 +78,10 @@ $this->roomsData = [
         "kegThreshold" => 5
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 4,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => true,
             "south" => true,
@@ -79,9 +91,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 4,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => true,
             "south" => true,
@@ -91,9 +104,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 2,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => false,
             "south" => true,
@@ -103,9 +117,10 @@ $this->roomsData = [
         "kegThreshold" => 4
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 4,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => true,
@@ -115,9 +130,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 1,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => false,
             "south" => true,
@@ -127,9 +143,10 @@ $this->roomsData = [
         "kegThreshold" => 3
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 2,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => true,
@@ -139,9 +156,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 3,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => false,
             "south" => true,
@@ -151,9 +169,10 @@ $this->roomsData = [
         "kegThreshold" => 5
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 1,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => true,
@@ -163,9 +182,10 @@ $this->roomsData = [
         "kegThreshold" => 3
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 1,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => true,
@@ -175,9 +195,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 2,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => true,
@@ -187,9 +208,10 @@ $this->roomsData = [
         "kegThreshold" => 4
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 3,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => false,
@@ -199,9 +221,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 0,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => false,
             "south" => true,
@@ -211,9 +234,10 @@ $this->roomsData = [
         "kegThreshold" => 2
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 3,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => true,
@@ -223,9 +247,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 4,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => true,
             "south" => true,
@@ -235,9 +260,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 4,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => true,
             "south" => false,
@@ -247,9 +273,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 2,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => false,
@@ -259,9 +286,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "red",
         "startFireValue" => 0,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => false,
             "south" => true,
@@ -271,9 +299,10 @@ $this->roomsData = [
         "kegThreshold" => 2
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 2,
-        "Doors" => [
+        "doors" => [
             "north" => true,
             "east" => false,
             "south" => true,
@@ -283,9 +312,10 @@ $this->roomsData = [
         "kegThreshold" => null
     ],
     [
+        "type" => "room",
         "fireColor" => "yellow",
         "startFireValue" => 3,
-        "Doors" => [
+        "doors" => [
             "north" => false,
             "east" => true,
             "south" => false,

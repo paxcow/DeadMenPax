@@ -5,7 +5,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * DeadMenPax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
+ * deadmenpax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -17,13 +17,15 @@
  *
  * In this PHP file, you are going to defines the rules of the game.
  */
+
 declare(strict_types=1);
 
-namespace Bga\Games\DeadMenPax;
+namespace Bga\Games\deadmenpax;
 
+use Bga\Games\deadmenpax\Classes\Room;
 use Deck;
 
-require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
+require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 
 class Game extends \Table
 {
@@ -40,18 +42,32 @@ class Game extends \Table
     private Deck $itemsDeck;
     private Deck $revengeDeck;
     private Deck $tokensBag;
-    private Deck $tilePile;
+    private Deck $roomsPile;
+    private Deck $charactersDeck;
+
+
+
+    private $roomsManager;
+    private $piratesManager;
 
     protected $itemData;
     protected $revengeData;
     protected $tokenData;
-    protected $roomsData;
+    protected array $roomsData;
+
 
     public function __construct()
     {
         $this->trace("########## Starting constructor");
-        require_once("material.inc.php");
+        require("material.inc.php");
         parent::__construct();
+
+
+        // Init global values with their initial values.
+        $this->initGameStateLabels([]);
+
+        // Dummy content.
+        //$this->setGameStateInitialValue("my_first_global_variable", 0)
 
 
         // Initialize decks
@@ -61,12 +77,18 @@ class Game extends \Table
         $this->revengeDeck->init("revenge");
         $this->tokensBag = $this->getNew("module.common.deck");
         $this->tokensBag->init("tokens");
-        $this->tilePile = $this->getNew("module.common.deck");
-        $this->tilePile->init("tiles");
- 
+        $this->roomsPile = $this->getNew("module.common.deck");
+        $this->roomsPile->init("rooms");
+        $this->charactersDeck = $this->getNew("module.common.deck");
+        $this->charactersDeck->init("characters");
+        
+        //Initialize board manager
+        $this->roomsManager = Classes\RoomsManager::init($this->roomsData);
+        //initialize pirates manager
+        $this->piratesManager = Classes\PiratesManager::init($this->roomsManager, $this->itemsDeck, $this->tokensBag);
     }
 
- 
+
     public function getGameProgression()
     {
         // TODO: compute and return the game progression
@@ -89,21 +111,21 @@ class Game extends \Table
      */
     public function upgradeTableDb($from_version)
     {
-//       if ($from_version <= 1404301345)
-//       {
-//            // ! important ! Use DBPREFIX_<table_name> for all tables
-//
-//            $sql = "ALTER TABLE DBPREFIX_xxxxxxx ....";
-//            $this->applyDbUpgradeToAllDB( $sql );
-//       }
-//
-//       if ($from_version <= 1405061421)
-//       {
-//            // ! important ! Use DBPREFIX_<table_name> for all tables
-//
-//            $sql = "CREATE TABLE DBPREFIX_xxxxxxx ....";
-//            $this->applyDbUpgradeToAllDB( $sql );
-//       }
+        //       if ($from_version <= 1404301345)
+        //       {
+        //            // ! important ! Use DBPREFIX_<table_name> for all tables
+        //
+        //            $sql = "ALTER TABLE DBPREFIX_xxxxxxx ....";
+        //            $this->applyDbUpgradeToAllDB( $sql );
+        //       }
+        //
+        //       if ($from_version <= 1405061421)
+        //       {
+        //            // ! important ! Use DBPREFIX_<table_name> for all tables
+        //
+        //            $sql = "CREATE TABLE DBPREFIX_xxxxxxx ....";
+        //            $this->applyDbUpgradeToAllDB( $sql );
+        //       }
     }
 
     /*
@@ -116,7 +138,7 @@ class Game extends \Table
      */
     protected function getAllDatas()
     {
-        $result = [];
+ /*       $result = [];
 
         // WARNING: We must only return information visible by the current player.
         $current_player_id = (int) $this->getCurrentPlayerId();
@@ -129,7 +151,22 @@ class Game extends \Table
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
 
-        return $result;
+        //get information about pirates:
+        $result["pirates"] = $this->piratesManager->getPirates();
+
+        //get Room Tiles on the table:
+        $result["board"] = $this->roomsManager->getAllRooms();
+
+        //get Tokens 
+        $result["tokens"]["board"] = $this->tokensBag->getCardsInLocation("board");
+        $result["tokens"]["players"] = $this->tokensBag->getCardsInLocation("player");
+
+        //get Items
+        $result["items"]["table"] = $this->itemsDeck->getCardsInLocation("table");
+        $result["items"]["player"] = $this->itemsDeck->getCardsInLocation("player");
+
+
+        return $result;*/
     }
 
     /**
@@ -175,28 +212,31 @@ class Game extends \Table
         );
 
         $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
-        $this->reloadPlayersBasicInfos();
-
-        // Init global values with their initial values.
-
-        // Dummy content.
-        $this->setGameStateInitialValue("my_first_global_variable", 0);
+        $this->reloadPlayersBasicInfos();;
 
         // Init game statistics.
- 
+
 
 
         // POPULATE DECKS
+
+        $charactersCards = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $charactersCards[] = array("type" => "character", "type_arg" => $i, "nbr" => 1);
+        }
+        $this->itemsDeck->createCards($charactersCards);
+        $this->itemsDeck->shuffle("deck");
+
         $itemCards = [];
         foreach ($this->itemData as $type_item => $itemCard) {
-            $itemCards[] = array("type" => "item", "type_arg" => $type_item, "nbr" =>1);
+            $itemCards[] = array("type" => "item", "type_arg" => $type_item, "nbr" => 1);
         }
         $this->itemsDeck->createCards($itemCards);
         $this->itemsDeck->shuffle("deck");
 
         $revengeCards = [];
         foreach ($this->revengeData as $type_revenge => $revengeCard) {
-            $revengeCards[] = array("type" => "revenge", "type_arg" => $type_revenge, "nbr" =>1);
+            $revengeCards[] = array("type" => "revenge", "type_arg" => $type_revenge, "nbr" => 1);
         }
         $this->revengeDeck->createCards($revengeCards);
         $this->revengeDeck->shuffle("deck");
@@ -209,22 +249,58 @@ class Game extends \Table
         $this->tokensBag->shuffle("bag");
 
         $tiles = [];
-        foreach ($this->roomsData as $tile_type => $tile) {
-            $tiles[] = array("type" => "tile", "type_arg" => $tile_type, "nbr" => 1);
+        $startingTiles = [];
+        foreach ($this->roomsData as $tile_index => $tile) {
+            if ($tile["type"] == "room") {
+                $tiles[] = array("type" => $tile["type"], "type_arg" => $tile_index, "nbr" => 1);
+            } elseif ($tile["type"] == "starting_room") {
+                $startingTiles[] = array("type" => $tile["type"], "type_arg" => $tile_index, "nbr" => 1);
+            }
         }
-        $this->tilePile->createCards($tiles, "pile");
-        $this->tilePile->shuffle("pile");
 
+        $this->roomsPile->createCards($tiles, "pile");
+        $this->roomsPile->createCards($startingTiles, "starting");
+
+        $this->roomsPile->shuffle("pile");
+
+        $this->roomsManager->loadAllRooms();
 
         // INIT GAME TABLE.
 
+        //setup starting Rooms
+        $startingRooms = $this->roomsPile->getCardsInLocation("starting");
 
 
+
+        foreach ($startingRooms as $roomId => $room) {
+            $room = $this->standardizeRoomArray($room);
+            $posX = $this->roomsData[$room["card_type_arg"]]["posX"];
+            $posY = $this->roomsData[$room["card_type_arg"]]["posY"];
+            $this->roomsManager->placeRoom($room, $posX, $posY);
+        }
+        $this->roomsManager->saveAllRooms();
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
     }
+     private function standardizeRoomArray(array $roomArray): array{
+        $mapping = [
+            "id" => "card_id",
+            "type" => "card_type",
+            "type_arg" => "card_type_arg",
+            "location" => "card_location",
+            "location_arg" => "card_location_arg"
+        ];
 
+        $standardizedArray = [];
+
+        foreach ($roomArray as $key => $value){
+            $newKey = $mapping[$key] ?? $key;
+            $standardizedArray[$newKey] = $value;
+        }
+        return $standardizedArray;
+
+   }  
     /**
      * This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
      * You can do whatever you want in order to make sure the turn of this player ends appropriately
@@ -239,19 +315,20 @@ class Game extends \Table
      * @param array{ type: string, name: string } $state
      * @param int $active_player
      * @return void
-     * @throws feException if the zombie mode is not supported at this game state.
+     * @throws \BgaUserException if the zombie mode is not supported at this game state.
      */
+
+
     protected function zombieTurn(array $state, int $active_player): void
     {
         $state_name = $state["name"];
 
         if ($state["type"] === "activeplayer") {
             switch ($state_name) {
-                default:
-                {
-                    $this->gamestate->nextState("zombiePass");
-                    break;
-                }
+                default: {
+                        $this->gamestate->nextState("zombiePass");
+                        break;
+                    }
             }
 
             return;

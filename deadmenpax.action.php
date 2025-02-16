@@ -1,48 +1,48 @@
 <?php
-/**
+/*
+ * THIS FILE HAS BEEN AUTOMATICALLY GENERATED. ANY CHANGES MADE DIRECTLY MAY BE OVERWRITTEN.
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * DeadMenPax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
+ * DeadMenPax implementation : © Andrea Paxcow Vitagliano <andrea.vitagliano@gmail.com>
  *
- * This code has been produced on the BGA studio platform for use on https://boardgamearena.com.
- * See http://en.doc.boardgamearena.com/Studio for more information.
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
  * -----
- *
- * deadmenpax.action.php
- *
- * DeadMenPax main action entry point
- *
- *
- * In this file, you are describing all the methods that can be called from your
- * user interface logic (javascript).
- *
- * If you define a method "actMyAction" here, then you can call it from your javascript code with:
- * this.bgaPerformAction("actMyAction", ...)
- *
  */
-declare(strict_types=1);
 
-/**
- * @property DeadMenPax $game
- */
 class action_deadmenpax extends APP_GameAction
 {
-    /**
-     * This is the constructor. Do not try to implement a `__construct` to bypass this method.
-     */
-    public function __default()
-    {
-        if ($this->isArg("notifwindow"))
-        {
-            $this->view = "common_notifwindow";
-            $this->viewArgs["table"] = $this->getArg("table", AT_posint, true);
-        }
-        else
-        {
-            $this->view = "deadmenpax_deadmenpax";
-            $this->trace("Complete re-initialization of board game.");
-        }
-    }
+	/** @var deadmenpax $game */
+	protected $game; // Enforces functions exist on Table class
+
+	// Constructor: please do not modify
+	public function __default()
+	{
+		if (self::isArg('notifwindow')) {
+			$this->view = "common_notifwindow";
+			$this->viewArgs['table'] = self::getArg("table", AT_posint, true);
+		} else {
+			$this->view = "deadmenpax_deadmenpax";
+			self::trace("Complete reinitialization of board game");
+		}
+	}
+
+	public function playCard()
+	{
+		self::setAjaxMode();
+
+		/** @var int $card_id */
+		$card_id = self::getArg('card_id', AT_int, true);
+
+		$this->game->playCard( $card_id );
+		self::ajaxResponse();
+	}
+
+	public function pass()
+	{
+		self::setAjaxMode();
+
+		$this->game->pass(  );
+		self::ajaxResponse();
+	}
 }
-
-

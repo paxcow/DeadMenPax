@@ -1,5 +1,7 @@
 <?php
-namespace BGA\Games\DeadMenPax;
+namespace Bga\Games\deadmenpax\Actions;
+
+use Bga\Games\deadmenpax\DB\DBManagerRegister;
 
 class ActionManager
 {
@@ -7,7 +9,7 @@ class ActionManager
 
     public static function init()
     {
-        self::$db = DBManagerRegister::addManger("actions", ActionRow::class);
+        self::$db = DBManagerRegister::addManager("actions", ActionRow::class);
     }
 
     public static function getAllActions($player_id = null): array

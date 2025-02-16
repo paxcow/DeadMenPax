@@ -2,7 +2,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * DeadMenPax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
+ * deadmenpax implementation : © Andrea "Paxcow" Vitagliano <andrea.vitagliano@gmail.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
 
-class DeadMenPax extends Table
+class deadmenpax extends Table
 {
     /**
      * Your global variables labels:
