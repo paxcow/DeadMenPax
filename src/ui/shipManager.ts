@@ -251,12 +251,4 @@ class Ship {
     });
   }
 
-  public positioningMode(room: RoomCard, positions:   state: boolean|null = null){
-    if (state = null) {
-      state = !this.positioning;
-    } 
-
-
-
-  }
 }
