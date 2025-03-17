@@ -1,0 +1,18 @@
+{
+  "rootDir": ".",
+  "compilerOptions": {
+    "target": "es5",
+    "module": "none",
+    "lib": ["dom", "esnext"],
+    "sourceMap": false,
+    "inlineSources": true,
+    "inlineSourceMap": true,
+    "sourceRoot": "./src",
+
+    "outFile": "deadmenpax.js",
+    "typeRoots": ["src/types", "./types", "./node_modules/@types"]
+  },
+
+  "include": ["src/**/GameBasics.ts","src/**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
