@@ -8,10 +8,10 @@ $this->roomsData = [
         "fireColor" => "yellow",
         "startFireValue" => null,
         "doors" => [
-            "north" => false,
-            "east" => false,
-            "south" => false,
-            "west" => false
+            "north" => true,
+            "east" => true,
+            "south" => true,
+            "west" => true
         ],
         "kegDoor" => null,
         "kegThreshold" => null,
@@ -26,7 +26,7 @@ $this->roomsData = [
         "doors" => [
             "north" => true,
             "south" => false,
-            "east" => false,
+            "east" => true,
             "west" => true
         ],
         "kegDoor" => null,
@@ -56,8 +56,8 @@ $this->roomsData = [
         "doors" => [
             "north" => true,
             "east" => true,
-            "south" => false,
-            "west" => false
+            "south" => true,
+            "west" => true
         ],
         "kegDoor" => null,
         "kegThreshold" => null,

@@ -56,9 +56,13 @@ class RoomsManager
      * Loads all room tiles from the database and populates the board and tiles arrays.
      */
     public function loadAllRooms(): void
-    {
-        foreach ($this->db->getAllRowsByKeys() as $roomId => $roomRow) {
-            if($roomRow("card_location") != "board") continue;
+    {   
+        $allRows = $this->db->getAllRowsByKeys();
+        // print_r("<pre>");
+        // print_r($allRows);
+        // if (count($allRows) == 0) return;
+        foreach ($allRows as $roomId => $roomRow) {
+            if($roomRow["card_location"] != "board") continue;
             
             $room = new Room($roomRow, $this->roomData);
             $this->rooms[$roomId] = $room;
@@ -334,10 +338,11 @@ class RoomsManager
      */
     private function updateReachability(): void
     {
+        return;
         if (!isset($this->board[0][0])) return;
 
         $reachable = [];
-        $this->dfsMarkReachable(0, 0, $reachable);
+        //$this->dfsMarkReachable(0, 0, $reachable);
 
         foreach ($this->rooms as $tile) {
             $pos = $tile->getPosition();

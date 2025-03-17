@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "watch",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: watch",
+			"detail": "npm run watch:ts && npm run watch:scss",
+			"presentation": {
+			  "reveal": "always",
+			  "panel": "new"
+			},
+			"runOptions": { "runOn": "folderOpen" }}
+	]
+}

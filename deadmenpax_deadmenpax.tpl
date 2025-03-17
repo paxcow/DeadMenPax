@@ -26,7 +26,13 @@
 -->
 
 
-This is your game interface. You can edit this HTML in your ".tpl" file.
+
+<div id="sea"></div>
+<div id="cards"></div>
+<div id="player1" class="player_board"></div>
+<div id="player2" class="player_board"></div>
+
+
 <svg width="0" height="0">
 	<filter id="filter">
 		<feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="8" seed="42" />

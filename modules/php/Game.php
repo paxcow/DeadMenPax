@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace Bga\Games\deadmenpax;
 
+use Bga\Games\deadmenpax\Classes\Position;
 use Bga\Games\deadmenpax\Classes\Room;
 use Deck;
 
@@ -276,7 +277,7 @@ class Game extends \Table
             $room = $this->standardizeRoomArray($room);
             $posX = $this->roomsData[$room["card_type_arg"]]["posX"];
             $posY = $this->roomsData[$room["card_type_arg"]]["posY"];
-            $this->roomsManager->placeRoom($room, $posX, $posY);
+            $this->roomsManager->placeRoom($room, new Position($posX,$posY));
         }
         $this->roomsManager->saveAllRooms();
 
